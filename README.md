@@ -14,7 +14,7 @@ Responder is a lightweight (2016 keyword of the year) NodeJS API for gathering a
 
 ## Development Configuration
 **secrets.json**
-```json
+```
 {
     "MONGO_URI": "XXX", // the MongoDB (or Azure DocumentDB) connection string
     "API_USERNAME": "XXX", // the username used for basic auth
