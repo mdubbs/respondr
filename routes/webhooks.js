@@ -59,19 +59,4 @@ router.post('/twilio/sms', function(req, res) {
     res.send(JSON.stringify({message:"yolo baggins"}));
 });
 
-router.get('/twilio/sms/messages', function(req, res){
-    var url = getMongoUrl(req);
-
-    MongoClient.connect(url, function(err, db) {
-        assert.equal(null, err);
-        console.log("Connected succesfully to server");
-
-        findMessages(db, function(data){
-            db.close();
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({results: data}));
-        });
-    });
-});
-
 module.exports = router;
