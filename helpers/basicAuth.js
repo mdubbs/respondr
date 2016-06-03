@@ -1,5 +1,4 @@
 var basicAuth = require('basic-auth');
-var sjson = require('../secrets.json');
 
 var BasicAuth = function(req, res, next) {
     // grab the user information using the basic-auth library
@@ -7,8 +6,15 @@ var BasicAuth = function(req, res, next) {
     
     // set the username and password to env vars or ones set in the secrets.json file
     // TODO: build out a manageable user system
-    var username = process.env.API_USERNAME || sjson.API_USERNAME;
-    var password = process.env.API_PASSWORD || sjson.API_PASSWORD;
+    if(req.app.get('env') === 'development')
+    {
+        var sjson = require('../secrets.json');
+        var username = sjson.API_USERNAME;
+        var password = sjson.API_PASSWORD;
+    } else {
+        var username = process.env.API_USERNAME
+        var password = process.env.API_PASSWORD
+    }
     
     // if no user, or missing username || password reject
     if(!user || !user.name || !user.pass) {
