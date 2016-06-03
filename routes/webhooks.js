@@ -30,8 +30,8 @@ router.post('/twilio/sms', function(req, res) {
         });
     });    
     
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify({message:"yolo baggins"}));
+    res.setHeader('Content-Type', 'text/plain');
+    res.send("Thanks for helping improve the patient experience here at Sparrow.");
 });
 
 module.exports = router;
