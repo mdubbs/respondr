@@ -1,10 +1,10 @@
 var express = require('express');
 var router = express.Router();
-
-/* GET home page. */
+var pjson = require('../package.json');
 
 router.get('/', function(req, res) {
-  res.render('index', { title: 'Express' });
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({message: "respondr", version: pjson.version}));
 });
 
 module.exports = router;
