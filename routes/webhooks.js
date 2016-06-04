@@ -1,34 +1,47 @@
 var express = require('express');
 var router = express.Router();
-var MongoClient = require('mongodb').MongoClient;
+//var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
+var mongoose = require ("mongoose");
 
-var insertMessage = function(message, db, callback) {
-    var collection = db.collection('messages');
-    
-    message.receieved = Date.now();
-    message.reviewed = false;
-    
-    collection.insertOne(message, function(err, result){
-        assert.equal(err, null);
-        console.log("Inserted message into the messages collection.");
-        callback(result);
-    });
-}
+// models
+var Message = require('../models/messageSchema');
 
 router.post('/twilio/sms', function(req, res) {
     
     var messageItem = req.body;
+    var messageBody = req.body.Body.toLowerCase();
+    var messageIsProblem = false;
     
-    // add message to mongo (Azure DocumentDB) asynchronously
-    MongoClient.connect(req.app.get('MONGO_URI'), function(err, db) {
-        assert.equal(null, err);
-        console.log("Connected succesfully to server");
-
-        insertMessage(messageItem, db, function(){
-            db.close();
-        });
-    });    
+    if(messageBody === 'problem')
+    {
+        // user reporting a problem
+        var responseMessage = "Hi, I'm sorry you are experiencing a problem here at Sparrow can you please explain the problem you are experiencing to me?";
+        messageIsProblem = true;
+    }
+    else if(messageBody === 'comments')
+    {
+        // user providing comments
+        var responseMessage = "Thanks for taking the time to help improve the patient experience here at Sparrow, we really appreciate it.";
+    }
+    else
+    {
+        // couldn't find keyword
+        var responseMessage = "I'm sorry, I didn't understand that. Please reply with PROBLEM to report a problem, or COMMENTS to provide feedback.";
+    }
+    
+    var message = new Message({
+        isProblem: messageIsProblem,
+        content: messageItem
+    });
+    
+    message.save(function(err){
+        if(err){
+            console.log("ERROR saving new message to db");  
+        } else {
+            console.log("Message inserted into the database");
+        }
+    });
     
     res.setHeader('Content-Type', 'text/plain');
     res.send("Thanks for helping improve the patient experience here at Sparrow.");

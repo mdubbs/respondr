@@ -5,6 +5,8 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
+var mongoose = require('mongoose');
+
 // helpers
 var basicAuth = require('./helpers/basicAuth');
 
@@ -25,9 +27,11 @@ app.locals.ENV_DEVELOPMENT = env == 'development';
 // set mongo (or Azure DocumentDB) URI local variable
 if (env === 'development') {
     var sjson = require('./secrets.json');
-    app.set('MONGO_URI', sjson.mongoUri);
+    app.set('MONGO_URI', sjson.MONGO_URI);
+    var mongoUri = sjson.MONGO_URI;
 } else {
     app.set('MONGO_URI', process.env.MONGO_URI);
+    var mongoUri = process.env.MONGO_URI;
 }
 
 app.use(logger('dev'));
@@ -36,6 +40,15 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 app.use(cookieParser());
+
+mongoose.connect(mongoUri, function (err, res) {
+    if (err) {
+        console.log ('ERROR connecting to mongo/documentdb' + '. ' + err);
+    } else {
+        console.log ('SUCCESS connecting to mongo/documentdb');
+    }
+});
+
 
 app.use('/', routes);
 app.use('/webhooks', webhooks);
