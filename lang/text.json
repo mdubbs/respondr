@@ -4,5 +4,7 @@
 	"keywordMissResponseText": "I'm sorry, I didn't understand that. Please reply with PROBLEM to report a problem, or COMMENTS to provide general feedback.",
 	"thanksProblemText": "Thanks for reporting this problem. We will reach out to you if we need additional information.",
 	"thanksCommentsText": "Thanks for taking the time to help improve the patient experience here at Sparrow!",
-	"thanksAppendedText": "Thanks. We have appended this message to your ticket and we will reach out if we have further questions!"
+	"thanksAppendedText": "Thanks. We have appended this message to your ticket and we will reach out if we have further questions!",
+	"sidNotRecognizedText": "Messaging Service SID Not Recognized",
+	"genericErrorText": "Whoops! Something went wrong, please try again."
 }

@@ -27,8 +27,7 @@ router.post('/twilio/sms', function(req, res) {
         {
             // set response message
             var responseMessage = messageBody === 'problem' ? lang.problemResponseText : lang.commentsResponseText;
-            var messageType = messageBody === 'problem' ? "Problem" : "Comments";
-            
+            var messageType = messageBody === 'problem' ? "Problem" : "Comments";          
 
             //check for existing ticket within last hour
             Ticket.findOne({'sender': messageItem.From, 'type': messageType}, function(err, retTicket){
@@ -38,7 +37,7 @@ router.post('/twilio/sms', function(req, res) {
                         if(err){
                             // error
                             console.log(err);
-                            res.send("Whoops something went wrong, please try again.")
+                            res.send(lang.genericErrorText)
                         } else {
                             var ticket = new Ticket({
                                 sender: messageItem.From,
@@ -50,7 +49,7 @@ router.post('/twilio/sms', function(req, res) {
                                 if(err) {
                                     // error
                                     console.log(err);
-                                    res.send("Whoops something went wrong, please try again.")
+                                    res.send(lang.genericErrorText)
                                 } else {
                                     res.send(responseMessage);
                                 }
@@ -70,13 +69,13 @@ router.post('/twilio/sms', function(req, res) {
                     message.save(function(err){
                         if(err) {
                             console.log(err);
-                            res.send("Whoops something went wrong, please try again.");
+                            res.send(lang.genericErrorText);
                         } else {
                             resTicket.messages.push(message);
                             resTicket.save(function(err){
                                 if(err) {
                                     console.log(err);
-                                    res.send("Whoops something went wrong, please try again.");
+                                    res.send(lang.genericErrorText);
                                 } else {
                                     res.send(lang.thanksAppendedText);
                                 }
@@ -88,10 +87,11 @@ router.post('/twilio/sms', function(req, res) {
         }
     } else {
         var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        res.setHeader('Content-Type', 'application/json');
         rollbar.reportMessage("Unrecognized Messaging Service from: "+ip);
+
+        res.setHeader('Content-Type', 'application/json');
         res.status(401);
-        res.send(JSON.stringify({message:"Messaging Service SID Not Recognized"}));
+        res.send(JSON.stringify({message:lang.sidNotRecognizedText}));
     }
 });
 

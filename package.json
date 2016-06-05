@@ -1,7 +1,8 @@
 {
   "name": "respondr",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
   "scripts": {
     "start": "node ./bin/www"
   },
