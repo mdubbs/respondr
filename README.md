@@ -1,5 +1,5 @@
 # Respondr
-Responder is a lightweight (2016 keyword of the year) NodeJS API for gathering and managing feedback from SMS messages sent to phone number(s)/short code(s) on Twilio. Respondr currently supports MongoDB as the backend database.
+Responder is a lightweight (2016 keyword of the year) NodeJS/MongoDB API for gathering and managing feedback from SMS messages sent to phone number(s)/short code(s) on Twilio (think of it like a ticketing system that people text).
 
 ## Getting started
 
@@ -11,10 +11,11 @@ Responder is a lightweight (2016 keyword of the year) NodeJS API for gathering a
 
 ## Current Endpoints
 ```
-POST		/webhooks/twilio/sms		// TwiML Messaging Service SMS Handler
-GET			/admin/messages					// List all messages received from Twilio
-GET			/admin/message/:id			// View specific message by id
-DELETE	/admin/message					// Delete a message by id
+POST			/webhooks/twilio/sms		// TwiML Messaging Service SMS Handler
+GET				/admin/messages					// List all messages received from Twilio
+GET				/admin/message/:id			// View specific message by id
+DELETE		/admin/message					// Delete a message by id
+GET				/admin/tickets					// View ticket chains
 ```
 
 ## Development Configuration

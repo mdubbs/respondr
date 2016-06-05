@@ -6,8 +6,8 @@ var rollbar = require('rollbar');
 var lang = require('../lang/text.json');
 
 // models
-var Message = require('../models/messageSchema');
-var Chain = require('../models/chainSchema');
+var Message = require('../models/message');
+var Ticket = require('../models/ticket');
 
 router.post('/twilio/sms', function(req, res) {
     
@@ -30,22 +30,23 @@ router.post('/twilio/sms', function(req, res) {
             var messageType = messageBody === 'problem' ? "Problem" : "Comments";
             
 
-            //check for existing chain within last hour
-            Chain.findOne({'sender': messageItem.From, 'type': messageType}, function(err, retChain){
-                if(retChain == null) {
-                    // no chain found -- save message and create chain
+            //check for existing ticket within last hour
+            Ticket.findOne({'sender': messageItem.From, 'type': messageType}, function(err, retTicket){
+                if(retTicket == null) {
+                    // no ticket found -- save message and create ticket
                     message.save(function(err){
                         if(err){
                             // error
                             console.log(err);
                             res.send("Whoops something went wrong, please try again.")
                         } else {
-                            var chain = new Chain({
+                            var ticket = new Ticket({
                                 sender: messageItem.From,
                                 type: messageType,
+                                status: "Open",
                                 messages: [message]
                             });
-                            chain.save(function(err){
+                            ticket.save(function(err){
                                 if(err) {
                                     // error
                                     console.log(err);
@@ -60,8 +61,8 @@ router.post('/twilio/sms', function(req, res) {
             });
         } else {
             //check for chain in the last hour and append
-            Chain.findOne({'sender': messageItem.From}, function(err, resChain){
-                if(resChain == null) {
+            Ticket.findOne({'sender': messageItem.From}, function(err, resTicket){
+                if(resTicket == null) {
                     //no existing chain, return dont understand message
                     res.send(lang.keywordMissResponseText);
                 } else {
@@ -71,10 +72,14 @@ router.post('/twilio/sms', function(req, res) {
                             console.log(err);
                             res.send("Whoops something went wrong, please try again.");
                         } else {
-                            resChain.messages.push(message);
-                            resChain.save(function(err){
-                                console.log(err);
-                                res.send("Thanks. We have appended this message to your ticket and we will reach out if we have further questions!");
+                            resTicket.messages.push(message);
+                            resTicket.save(function(err){
+                                if(err) {
+                                    console.log(err);
+                                    res.send("Whoops something went wrong, please try again.");
+                                } else {
+                                    res.send(lang.thanksAppendedText);
+                                }
                             });
                         }
                     });
@@ -82,8 +87,9 @@ router.post('/twilio/sms', function(req, res) {
             });
         }
     } else {
+        var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         res.setHeader('Content-Type', 'application/json');
-        rollbar.reportMessage("Unrecognized Messaging Service Attempting Request");
+        rollbar.reportMessage("Unrecognized Messaging Service from: "+ip);
         res.status(401);
         res.send(JSON.stringify({message:"Messaging Service SID Not Recognized"}));
     }

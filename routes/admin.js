@@ -7,8 +7,8 @@ var ObjectID = require('mongodb').ObjectID;
 var rollbar = require('rollbar');
 
 // models
-var Message = require('../models/messageSchema');
-var Chain = require('../models/chainSchema');
+var Message = require('../models/message');
+var Ticket = require('../models/ticket');
 
 var handleError = function(url, err, res) {
     rollbar.reportMessage(err);
@@ -61,8 +61,8 @@ router.delete('/messages/', function(req, res) {
     });
 });
 
-router.get('/chains', function(req, res) {
-    var url = "/admin/chains";
+router.get('/tickets', function(req, res) {
+    var url = "/admin/tickets";
 
     Chain.find({}, function(err, result) {
         if(err) {

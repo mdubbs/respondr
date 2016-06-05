@@ -1,9 +1,9 @@
 var mongoose = require("mongoose");
 
-var messageSchema = new mongoose.Schema({
+var message = new mongoose.Schema({
     received: { type: Date, default: Date.now },
     messageType: String,
     content: mongoose.Schema.Types.Mixed
 });
 
-module.exports = mongoose.model('messages', messageSchema);
+module.exports = mongoose.model('messages', message);
