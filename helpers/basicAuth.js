@@ -6,8 +6,7 @@ var BasicAuth = function(req, res, next) {
     
     // set the username and password to env vars or ones set in the secrets.json file
     // TODO: build out a manageable user system
-    if(req.app.get('env') === 'development')
-    {
+    if(req.app.get('env') === 'development') {
         var sjson = require('../secrets.json');
         var username = sjson.API_USERNAME;
         var password = sjson.API_PASSWORD;
@@ -20,7 +19,6 @@ var BasicAuth = function(req, res, next) {
     if(!user || !user.name || !user.pass) {
         res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
         res.status(401);
-        res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify({message: "Authorization Required"}));
         return;
     }
@@ -33,7 +31,6 @@ var BasicAuth = function(req, res, next) {
         // return authorization requried
         res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
         res.status(401);
-        res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify({message: "Authorization Required"}));
         return;
     }

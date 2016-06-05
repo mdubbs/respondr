@@ -2,8 +2,7 @@ var mongoose = require("mongoose");
 
 var messageSchema = new mongoose.Schema({
     received: { type: Date, default: Date.now },
-    reviewed: { type: Boolean, default: false },
-    isProblem: { type: Boolean, default: false },
+    messageType: String,
     content: mongoose.Schema.Types.Mixed
 });
 

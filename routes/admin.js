@@ -1,62 +1,75 @@
 var express = require('express');
 var router = express.Router();
 var pjson = require('../package.json');
-var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
+var mongoose = require("mongoose");
 var ObjectID = require('mongodb').ObjectID;
+var rollbar = require('rollbar');
 
-var collectionId = "messages";
+// models
+var Message = require('../models/messageSchema');
+var Chain = require('../models/chainSchema');
 
-var getMessages = function(db, callback) {
-    var collection = db.collection(collectionId);   
-    collection.find({}).toArray(function(err, data) {
-        assert.equal(err, null);
-        console.log("Found the following messages");
-        console.log(data);
-        callback(data);
-    });
-}
-
-var findMessage = function(id, db, callback) {
-    var collection = db.collection(collectionId);
-    collection.findOne({_id: ObjectID(id)}, function(err, data){
-        assert.equal(err, null);
-        console.log("Found the following message");
-        console.log(data);
-        callback(data);
-    });
+var handleError = function(url, err, res) {
+    rollbar.reportMessage(err);
+    res.status(500);
+    res.send(JSON.stringify({url: url, message: err.message}));
 }
 
 router.get('/', function(req, res) {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({message: "respondr admin", version: pjson.version}));
+    res.send(JSON.stringify({message: "respondr admin", version: pjson.version}));
 });
 
-router.get('/messages', function(req, res){
-    MongoClient.connect(req.app.get('MONGO_URI'), function(err, db) {
-        assert.equal(null, err);
-        console.log("Connected succesfully to server");
+router.get('/messages', function(req, res) {
+    var url = "/admin/messages";
 
-        getMessages(db, function(data){
-            db.close();
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({url:'/admin/messages', results: data, totalCount: data.length}));
-        });
-    });   
+    Message.find({}, function(err, result) {
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({url: url, results: result}));
+        }
+    });
 });
 
-router.get('/messages/:id', function(req, res){
+router.get('/messages/:id', function(req, res) {
     var messageId = req.params.id;
-    MongoClient.connect(req.app.get('MONGO_URI'), function(err, db) {
-        assert.equal(null, err);
-        console.log("Connected succesfully to server");
+    var url = "/admin/messages/"+messageId;
+    Message.findById(messageId, function(err, message){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            if(message != null) {
+                message.url = url;
+                res.send(JSON.stringify(message));
+            } else {
+                res.status(404);
+                res.send(JSON.stringify({message:"message not found"}));
+            }
+        }
+    });
+});
 
-        findMessage(messageId, db, function(data){
-            db.close();
-            res.setHeader('Content-Type', 'application/json');
-            data.url = '/admin/messages/'+messageId;
-            res.send(JSON.stringify(data));
-        });
+router.delete('/messages/', function(req, res) {
+    var messageId = req.body.id;
+    Message.findOneAndRemove({'_id': messageId}, function(err, result){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({message:"message "+messageId+" deleted"}));
+        }
+    });
+});
+
+router.get('/chains', function(req, res) {
+    var url = "/admin/chains";
+
+    Chain.find({}, function(err, result) {
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({url: url, results: result}));
+        }
     });
 });
 

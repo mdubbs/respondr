@@ -1,50 +1,92 @@
 var express = require('express');
 var router = express.Router();
-//var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
-var mongoose = require ("mongoose");
+var mongoose = require('mongoose');
+var rollbar = require('rollbar');
+var lang = require('../lang/text.json');
 
 // models
 var Message = require('../models/messageSchema');
+var Chain = require('../models/chainSchema');
 
 router.post('/twilio/sms', function(req, res) {
     
-    var messageItem = req.body;
-    var messageBody = req.body.Body.toLowerCase();
-    var messageIsProblem = false;
-    
-    if(messageBody === 'problem')
+    if(req.body.MessagingServiceSid === req.app.get('MESSAGING_SID'))
     {
-        // user reporting a problem
-        var responseMessage = "Hi, I'm sorry you are experiencing a problem here at Sparrow can you please explain the problem you are experiencing to me?";
-        messageIsProblem = true;
-    }
-    else if(messageBody === 'comments')
-    {
-        // user providing comments
-        var responseMessage = "Thanks for taking the time to help improve the patient experience here at Sparrow, we really appreciate it.";
-    }
-    else
-    {
-        // couldn't find keyword
-        var responseMessage = "I'm sorry, I didn't understand that. Please reply with PROBLEM to report a problem, or COMMENTS to provide feedback.";
-    }
-    
-    var message = new Message({
-        isProblem: messageIsProblem,
-        content: messageItem
-    });
-    
-    message.save(function(err){
-        if(err){
-            console.log("ERROR saving new message to db");  
+        res.setHeader('Content-Type', 'text/plain');
+
+        var messageItem = req.body;
+        var messageBody = req.body.Body.toLowerCase();
+        
+        var message = new Message({
+            messageType: messageType,
+            content: messageItem
+        });
+
+        if(messageBody === 'problem' || messageBody === 'comments')
+        {
+            // set response message
+            var responseMessage = messageBody === 'problem' ? lang.problemResponseText : lang.commentsResponseText;
+            var messageType = messageBody === 'problem' ? "Problem" : "Comments";
+            
+
+            //check for existing chain within last hour
+            Chain.findOne({'sender': messageItem.From, 'type': messageType}, function(err, retChain){
+                if(retChain == null) {
+                    // no chain found -- save message and create chain
+                    message.save(function(err){
+                        if(err){
+                            // error
+                            console.log(err);
+                            res.send("Whoops something went wrong, please try again.")
+                        } else {
+                            var chain = new Chain({
+                                sender: messageItem.From,
+                                type: messageType,
+                                messages: [message]
+                            });
+                            chain.save(function(err){
+                                if(err) {
+                                    // error
+                                    console.log(err);
+                                    res.send("Whoops something went wrong, please try again.")
+                                } else {
+                                    res.send(responseMessage);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
         } else {
-            console.log("Message inserted into the database");
+            //check for chain in the last hour and append
+            Chain.findOne({'sender': messageItem.From}, function(err, resChain){
+                if(resChain == null) {
+                    //no existing chain, return dont understand message
+                    res.send(lang.keywordMissResponseText);
+                } else {
+                    //append message to the chain
+                    message.save(function(err){
+                        if(err) {
+                            console.log(err);
+                            res.send("Whoops something went wrong, please try again.");
+                        } else {
+                            resChain.messages.push(message);
+                            resChain.save(function(err){
+                                console.log(err);
+                                res.send("Thanks. We have appended this message to your ticket and we will reach out if we have further questions!");
+                            });
+                        }
+                    });
+                }
+            });
         }
-    });
-    
-    res.setHeader('Content-Type', 'text/plain');
-    res.send("Thanks for helping improve the patient experience here at Sparrow.");
+    } else {
+        res.setHeader('Content-Type', 'application/json');
+        rollbar.reportMessage("Unrecognized Messaging Service Attempting Request");
+        res.status(401);
+        res.send(JSON.stringify({message:"Messaging Service SID Not Recognized"}));
+    }
 });
 
 module.exports = router;
