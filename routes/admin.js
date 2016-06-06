@@ -67,7 +67,7 @@ router.delete('/messages/', function(req, res) {
 router.get('/tickets', function(req, res) {
     var url = "/admin/tickets";
 
-    Chain.find({}, function(err, result) {
+    Ticket.find({}, function(err, result) {
         if(err) {
             handleError(url, err, res);
         } else {
