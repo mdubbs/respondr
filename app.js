@@ -4,6 +4,9 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var rollbar = require('rollbar');
+
+var mongoose = require('mongoose');
 
 // helpers
 var basicAuth = require('./helpers/basicAuth');
@@ -15,6 +18,11 @@ var admin = require('./routes/admin');
 
 var app = express();
 
+app.use(function (req, res, next) {
+  res.contentType('application/json');
+  next();
+});
+
 var env = process.env.NODE_ENV || 'development';
 
 app.set('port', process.env.PORT || 3000);
@@ -22,13 +30,17 @@ app.set('port', process.env.PORT || 3000);
 app.locals.ENV = env;
 app.locals.ENV_DEVELOPMENT = env == 'development';
 
-// set mongo (or Azure DocumentDB) URI local variable
+// setup messaing sid and mongo uri
+app.set('MESSAGING_SID', env === 'development' ? require('./secrets.json').MESSAGING_SID : process.env.MESSAGING_SID);
+app.set('MONGO_URI', env === 'development' ? require('./secrets.json').MONGO_URI : process.env.MONGO_URI);
+
+// setup Rollbar
 if (env === 'development') {
     var sjson = require('./secrets.json');
-    app.set('MONGO_URI', sjson.mongoUri);
-} else {
-    app.set('MONGO_URI', process.env.MONGO_URI);
+    app.use(rollbar.errorHandler(sjson.ROLLBAR_TOKEN, {environment: env}));
 }
+else
+    app.use(rollebar.errorHandler(process.env.ROLLBAR_TOKEN, {environment: env}));
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -36,6 +48,14 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 app.use(cookieParser());
+
+mongoose.connect(app.get('MONGO_URI'), function (err, res) {
+    if (err) {
+        console.log ('ERROR connecting to mongo/documentdb' + '. ' + err);
+    } else {
+        console.log ('SUCCESS connecting to mongo/documentdb');
+    }
+});
 
 app.use('/', routes);
 app.use('/webhooks', webhooks);
@@ -57,7 +77,6 @@ if (app.get('env') === 'development') {
     app.use(function(err, req, res, next) {
         console.log(err);
         res.status(err.status || 500);
-        res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify({
             message: err.message,
         }));
@@ -69,9 +88,8 @@ if (app.get('env') === 'development') {
 app.use(function(err, req, res, next) {
     console.log(err);
     res.status(err.status || 500);
-    res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify({
-        message: err.message,
+        message: "something went wrong",
     }));
 });
 

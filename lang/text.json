@@ -1,0 +1,10 @@
+{
+	"problemResponseText": "I'm sorry you are experiencing a problem here at Sparrow can you please explain the problem you are experiencing?",
+	"commentsResponseText": "We love hearing from our patients and patient families, go ahead and reply to this message with your feedback!",
+	"keywordMissResponseText": "I'm sorry, I didn't understand that. Please reply with PROBLEM to report a problem, or COMMENTS to provide general feedback.",
+	"thanksProblemText": "Thanks for reporting this problem. We will reach out to you if we need additional information.",
+	"thanksCommentsText": "Thanks for taking the time to help improve the patient experience here at Sparrow!",
+	"thanksAppendedText": "Thanks. We have appended this message to your ticket and we will reach out if we have further questions!",
+	"sidNotRecognizedText": "Messaging Service SID Not Recognized",
+	"genericErrorText": "Whoops! Something went wrong, please try again."
+}

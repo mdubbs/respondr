@@ -1,62 +1,156 @@
 var express = require('express');
 var router = express.Router();
 var pjson = require('../package.json');
-var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
+var mongoose = require("mongoose");
 var ObjectID = require('mongodb').ObjectID;
+var rollbar = require('rollbar');
 
-var collectionId = "messages";
+// models
+var Message = require('../models/message');
+var Ticket = require('../models/ticket');
 
-var getMessages = function(db, callback) {
-    var collection = db.collection(collectionId);   
-    collection.find({}).toArray(function(err, data) {
-        assert.equal(err, null);
-        console.log("Found the following messages");
-        console.log(data);
-        callback(data);
-    });
+var handleError = function(url, err, res) {
+    rollbar.reportMessage(err);
+    res.status(500);
+    res.send(JSON.stringify({url: url, message: err.message}));
 }
 
-var findMessage = function(id, db, callback) {
-    var collection = db.collection(collectionId);
-    collection.findOne({_id: ObjectID(id)}, function(err, data){
-        assert.equal(err, null);
-        console.log("Found the following message");
-        console.log(data);
-        callback(data);
-    });
-}
-
+// INDEX
 router.get('/', function(req, res) {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({message: "respondr admin", version: pjson.version}));
+    res.send(JSON.stringify({message: "respondr admin", version: pjson.version}));
 });
 
-router.get('/messages', function(req, res){
-    MongoClient.connect(req.app.get('MONGO_URI'), function(err, db) {
-        assert.equal(null, err);
-        console.log("Connected succesfully to server");
+// MESSAGES
+router.get('/messages', function(req, res) {
+    var url = "/admin/messages";
 
-        getMessages(db, function(data){
-            db.close();
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({url:'/admin/messages', results: data, totalCount: data.length}));
-        });
-    });   
+    Message.find({}, function(err, result) {
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({url: url, results: result}));
+        }
+    });
 });
 
-router.get('/messages/:id', function(req, res){
+router.get('/messages/:id', function(req, res) {
     var messageId = req.params.id;
-    MongoClient.connect(req.app.get('MONGO_URI'), function(err, db) {
-        assert.equal(null, err);
-        console.log("Connected succesfully to server");
+    var url = "/admin/messages/"+messageId;
+    Message.findById(messageId, function(err, message){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            if(message != null) {
+                message.url = url;
+                res.send(JSON.stringify(message));
+            } else {
+                res.status(404);
+                res.send(JSON.stringify({message:"message not found"}));
+            }
+        }
+    });
+});
 
-        findMessage(messageId, db, function(data){
-            db.close();
-            res.setHeader('Content-Type', 'application/json');
-            data.url = '/admin/messages/'+messageId;
-            res.send(JSON.stringify(data));
-        });
+router.delete('/messages/', function(req, res) {
+    var messageId = req.body.id;
+    Message.findOneAndRemove({'_id': messageId}, function(err, result){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({message:"message "+messageId+" deleted"}));
+        }
+    });
+});
+
+// TICKETS
+router.get('/tickets', function(req, res) {
+    var url = "/admin/tickets";
+
+    Ticket.find({}, function(err, result) {
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({url: url, results: result}));
+        }
+    });
+});
+
+router.get('/tickets/:id', function(req, res) {
+    var ticketId = req.params.id;
+    var url = "/admin/tickets/"+ticketId;
+    Ticket.findById(ticketId, function(err, message){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            if(message != null) {
+                message.url = url;
+                res.send(JSON.stringify(message));
+            } else {
+                res.status(404);
+                res.send(JSON.stringify({message:"message not found"}));
+            }
+        }
+    });
+});
+
+router.post('/tickets/:id/reviewed', function(req, res){
+    var ticketId = req.params.id;
+    var url = "/admin/tickets/"+ticketId+"/reviewed";
+    Ticket.findOneAndUpdate({'_id': ticketId}, {reviewed:true}, function(err, result){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({message:"ticket "+ticketId+" marked as reviewed"}));
+        }
+    });
+});
+
+router.post('/tickets/:id/pending', function(req, res){
+    var ticketId = req.params.id;
+    var url = "/admin/tickets/"+ticketId+"/pending";
+    Ticket.findOneAndUpdate({'_id': ticketId}, {status:"Pending"}, function(err, result){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({message:"ticket "+ticketId+" has been closed"}));
+        }
+    });
+});
+
+router.post('/tickets/:id/completed', function(req, res){
+    var ticketId = req.params.id;
+    var url = "/admin/tickets/"+ticketId+"/completed";
+    Ticket.findOneAndUpdate({'_id': ticketId}, {status:"Completed"}, function(err, result){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({message:"ticket "+ticketId+" has been closed"}));
+        }
+    });
+});
+
+router.post('/tickets/:id/close', function(req, res){
+    var ticketId = req.params.id;
+    var url = "/admin/tickets/"+ticketId+"/close";
+    Ticket.findOneAndUpdate({'_id': ticketId}, {status:"Closed"}, function(err, result){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({message:"ticket "+ticketId+" has been closed"}));
+        }
+    });
+});
+
+router.delete('/tickets/', function(req, res) {
+    var ticketId = req.body.id;
+    var url = "/admin/tickets";
+    Ticket.findOneAndRemove({'_id': ticketId}, function(err, result){
+        if(err) {
+            handleError(url, err, res);
+        } else {
+            res.send(JSON.stringify({message:"ticket "+ticketId+" deleted"}));
+        }
     });
 });
 
