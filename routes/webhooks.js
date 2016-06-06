@@ -28,10 +28,9 @@ router.post('/twilio/sms', function(req, res) {
             // set response message
             var responseMessage = messageBody === 'problem' ? lang.problemResponseText : lang.commentsResponseText;
             var messageType = messageBody === 'problem' ? "Problem" : "Comments";
-            var nowMinusHour = new Date(Date.now() - 60 * 60 * 1000);  
 
             //check for existing ticket within last hour
-            Ticket.findOne({sender: messageItem.From, type: messageType, received:{$gt: new Date(ISODate().getTime() - 1000 * 60 * 30)}}, function(err, retTicket){
+            Ticket.findOne({sender: messageItem.From, type: messageType, received:{$gte: new Date(Date.now() - 1000 * 60 * 30)}}, function(err, retTicket){
                 if(retTicket == null) {
                     // no ticket found -- save message and create ticket
                     message.save(function(err){
@@ -61,7 +60,7 @@ router.post('/twilio/sms', function(req, res) {
             });
         } else {
             //check for chain in the last hour and append
-            Ticket.findOne({sender: messageItem.From, received:{$gt: new Date(ISODate().getTime() - 1000 * 60 * 30)}}, function(err, resTicket){
+            Ticket.findOne({sender: messageItem.From, received:{$gte: new Date(Date.now() - 1000 * 60 * 30)}}, function(err, resTicket){
                 if(resTicket == null) {
                     //no existing chain, return dont understand message
                     res.send(lang.keywordMissResponseText);
