@@ -40,7 +40,7 @@ if (env === 'development') {
     app.use(rollbar.errorHandler(sjson.ROLLBAR_TOKEN, {environment: env}));
 }
 else
-    app.use(rollebar.errorHandler(process.env.ROLLBAR_TOKEN, {environment: env}));
+    app.use(rollbar.errorHandler(process.env.ROLLBAR_TOKEN, {environment: env}));
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
