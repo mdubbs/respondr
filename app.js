@@ -1,4 +1,4 @@
-require('newrelic');
+var compression = require('compression');
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -18,6 +18,8 @@ var webhooks = require('./routes/webhooks');
 var admin = require('./routes/admin');
 
 var app = express();
+
+app.use(compression());
 
 app.use(function (req, res, next) {
   res.contentType('application/json');
