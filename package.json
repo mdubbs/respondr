@@ -15,6 +15,7 @@
     "mongodb": "^2.1.21",
     "mongoose": "^4.4.19",
     "morgan": "^1.6.1",
+    "newrelic": "^1.28.1",
     "rollbar": "^0.6.2",
     "serve-favicon": "^2.3.0"
   },
@@ -26,5 +27,7 @@
     "time-grunt": "^1.2.1",
     "load-grunt-tasks": "^3.2.0"
   },
-  "engines": {"node": "6.1.0"}
+  "engines": {
+    "node": "6.1.0"
+  }
 }
